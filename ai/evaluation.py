@@ -68,7 +68,7 @@ class Evaluation:
 
     def pick_best_move(self, board_obj, piece):
         valid_locations = self.get_valid_locations(board_obj)
-        best_score = -float("inf")
+        best_score = -10000
         best_col = random.choice(valid_locations)
 
         for col in valid_locations:
