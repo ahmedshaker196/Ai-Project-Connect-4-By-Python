@@ -1,12 +1,23 @@
+import random
+import numpy as np
+from board.board import ROW_COUNT, COLUMN_COUNT
+
 EMPTY = 0
 PLAYER_PIECE = 1
 AI_PIECE = 2
 WINDOW_LENGTH = 4
 
+
 class Evaluation:
 
-    @staticmethod
-    def evaluate_window(window, piece):
+    def get_valid_locations(self, board_obj):
+        valid_locations = []
+        for col in range(COLUMN_COUNT):
+            if board_obj.is_valid_location(col):
+                valid_locations.append(col)
+        return valid_locations
+
+    def evaluate_window(self, window, piece):
         score = 0
         opp_piece = PLAYER_PIECE if piece == AI_PIECE else AI_PIECE
 
@@ -21,3 +32,48 @@ class Evaluation:
             score -= 4
 
         return score
+
+    def score_position(self, board_grid, piece):
+        score = 0
+
+        center_array = [int(i) for i in list(board_grid[:, COLUMN_COUNT // 2])]
+        score += center_array.count(piece) * 3
+
+        for r in range(ROW_COUNT):
+            row_array = [int(i) for i in list(board_grid[r, :])]
+            for c in range(COLUMN_COUNT - 3):
+                score += self.evaluate_window(row_array[c:c + WINDOW_LENGTH], piece)
+                
+
+        for c in range(COLUMN_COUNT):
+            col_array = [int(i) for i in list(board_grid[:, c])]
+            for r in range(ROW_COUNT - 3):
+                score += self.evaluate_window( col_array[r:r + WINDOW_LENGTH], piece)
+                
+
+        for r in range(ROW_COUNT - 3):
+            for c in range(COLUMN_COUNT - 3):
+                score += self.evaluate_window([board_grid[r + i][c + i] for i in range(WINDOW_LENGTH)],piece)
+                
+                score += self.evaluate_window([board_grid[r + 3 - i][c + i] for i in range(WINDOW_LENGTH)],piece)
+                
+
+        return score
+
+    def pick_best_move(self, board_obj, piece):
+        valid_locations = self.get_valid_locations(board_obj)
+        best_score = -float("inf")
+        best_col = random.choice(valid_locations)
+
+        for col in valid_locations:
+            row = board_obj.get_next_open_row(col)
+            temp_board = board_obj.board.copy()
+            board_obj.drop_piece(temp_board, row, col, piece)
+
+            score = self.score_position(temp_board, piece)
+
+            if score > best_score:
+                best_score = score
+                best_col = col
+
+        return best_col
