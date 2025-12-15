@@ -1,12 +1,11 @@
 import random
-import numpy as np
-from board.board import ROW_COUNT, COLUMN_COUNT
+from board.board import Board, ROW_COUNT, COLUMN_COUNT
+
 
 EMPTY = 0
 PLAYER_PIECE = 1
 AI_PIECE = 2
 WINDOW_LENGTH = 4
-
 
 class Evaluation:
 
@@ -33,30 +32,37 @@ class Evaluation:
 
         return score
 
-    def score_position(self, board_grid, piece):
+    def score_position(self, board_obj, piece):
         score = 0
+        board_grid = board_obj.board
 
+        # العمود الأوسط
         center_array = [int(i) for i in list(board_grid[:, COLUMN_COUNT // 2])]
         score += center_array.count(piece) * 3
 
+        # الأفقي
         for r in range(ROW_COUNT):
             row_array = [int(i) for i in list(board_grid[r, :])]
-            for c in range(COLUMN_COUNT - 3):
+            for c in range(COLUMN_COUNT - 3):  
                 score += self.evaluate_window(row_array[c:c + WINDOW_LENGTH], piece)
-                
 
+        # الرأسي
         for c in range(COLUMN_COUNT):
             col_array = [int(i) for i in list(board_grid[:, c])]
-            for r in range(ROW_COUNT - 3):
-                score += self.evaluate_window( col_array[r:r + WINDOW_LENGTH], piece)
-                
+            for r in range(ROW_COUNT - 3): 
+                score += self.evaluate_window(col_array[r:r + WINDOW_LENGTH], piece)
 
-        for r in range(ROW_COUNT - 3):
-            for c in range(COLUMN_COUNT - 3):
-                score += self.evaluate_window([board_grid[r + i][c + i] for i in range(WINDOW_LENGTH)],piece)
-                
-                score += self.evaluate_window([board_grid[r + 3 - i][c + i] for i in range(WINDOW_LENGTH)],piece)
-                
+        # القُطري الموجب \
+        for r in range(ROW_COUNT - 3):  
+            for c in range(COLUMN_COUNT - 3):  
+                window = [board_grid[r + i][c + i] for i in range(WINDOW_LENGTH)]
+                score += self.evaluate_window(window, piece)
+
+        # القُطري السالب /
+        for r in range(ROW_COUNT - 3): 
+            for c in range(COLUMN_COUNT - 3):  
+                window = [board_grid[r + WINDOW_LENGTH - 1 - i][c + i] for i in range(WINDOW_LENGTH)]
+                score += self.evaluate_window(window, piece)
 
         return score
 
@@ -67,8 +73,9 @@ class Evaluation:
 
         for col in valid_locations:
             row = board_obj.get_next_open_row(col)
-            temp_board = board_obj.board.copy()
-            board_obj.drop_piece(temp_board, row, col, piece)
+            temp_board = Board()
+            temp_board.board = board_obj.board.copy()
+            temp_board.drop_piece(row, col, piece)
 
             score = self.score_position(temp_board, piece)
 
